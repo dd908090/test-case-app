@@ -9,6 +9,6 @@ interface LinkRepositoryInterface
     public function getAllLinks();
     public function getLinkById(Link $Link);
     public function deleteLink(Link $Link);
-    public function createLink(array $attributes);
+    public function saveLink(array $attributes);
     public function updateLink(Link $Link, array $attributes);
 }

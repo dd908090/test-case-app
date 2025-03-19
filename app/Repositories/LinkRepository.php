@@ -7,29 +7,40 @@ use App\Models\Link;
 
 class LinkRepository implements LinkRepositoryInterface
 {
+    public function findExpired($date)
+    {
+        return Link::where('expired_at', '<', $date)->get();
+    }
+
+    public function getAllLinksByUser($user_id)
+    {
+        return Link::where('user_id', $user_id)->get();
+    }
+
     public function getAllLinks()
     {
         return Link::all();
     }
 
-    public function getLinkById(Link $Link)
+    public function getLinkById($linkId)
     {
-        return $Link;
+        return Link::where('id', $linkId)->first();
     }
 
-    public function deleteLink(Link $Link)
+    public function deleteLink(Link $link)
     {
-        $Link->delete();
+        $link->delete();
     }
 
-    public function createLink(array $attributes)
+    public function saveLink(array $attributes)
     {
+
         return Link::create($attributes);
     }
 
-    public function updateLink(Link $Link, array $attributes)
+    public function updateLink(Link $link, array $attributes)
     {
-        return $Link->update($attributes);
+        return $link->update($attributes);
     }
 
     public function shortUrlInDB($short_url)

@@ -4,7 +4,7 @@ namespace App\Http\Requests\Link;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class StoreRequest extends FormRequest
+class Request extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -22,10 +22,9 @@ class StoreRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'original_url' => ['required', 'url'],
+            'original_url' => ['required'],
             'custom_url' => ['nullable'],
-            'expired_at' => ['nullable', 'date'],
-            'length' => ['nullable', 'integer'],
+            'expired_at' => ['nullable'],
         ];
     }
 }

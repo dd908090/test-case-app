@@ -14,6 +14,7 @@ class Link extends Model
         "original_url",
         "short_url",
         "expired_at",
+        "user_id",
     ];
 
 

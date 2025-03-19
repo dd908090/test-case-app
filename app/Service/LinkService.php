@@ -2,13 +2,14 @@
 
 namespace App\Service;
 
-use App\DTOs\refund\LinkDTORefund;
+use App\Models\Link;
 use App\Repositories\LinkRepository;
-use Auth;
+use Illuminate\Support\Facades\Auth;
+
 class LinkService
 {
 
-    protected $linkRepository;
+    protected LinkRepository $linkRepository;
 
     public function __construct(LinkRepository $linkRepository)
     {
@@ -16,40 +17,62 @@ class LinkService
     }
 
 
-    public function createLinkService($linkDto)
+    public function updateLink(Link $link, $linkDTO)
     {
 
-        $original_url = $linkDto->original_url;
-        $expired_at = $linkDto->expired_at ?? $this->expiredAtDefault();
-
-        if (!empty($linkDto['custom_url'])) {
-            if ($this->linkRepository->shortUrlInDB($linkDto['custom_url'])) {
-                return $message = 'The link is already taken';
+        $link_data = $linkDTO->toArray();
+        if (!empty($link_data["custom_url"])) {
+            if ($this->linkRepository->shortUrlInDB($linkDTO->getCustomUrl())) {
+                return abort(409, 'The link is already taken');
+            } else {
+                $link_data['short_url'] = $link_data['custom_url'];
             }
-            $short_url = $linkDto['custom_url'];
-        } else {
-            $short_url = $this->generateUniqueShortUrl($linkDto['length']);
         }
 
-        $this->linkRepository->createLink([
-            'original_url' => $original_url,
-            'short_url' => $short_url,
-            'user_id' => Auth::id(),
-            'expired_at' => $expired_at,
-        ]);
-        $message = 'The short url has been successfully created';
-        return new LinkDTORefund::fromService($message,$short_url);
 
-
-
+        $this->linkRepository->updateLink($link, $link_data);
     }
 
-    public function handleRedirectService($linkDto)
+    public function getAllLinks()
     {
-        $original_url = $this->linkRepository->findOriginalUrl($linkDto->short_url);
+        return $this->linkRepository->getAllLinksByUser(Auth::user()->id);
+    }
 
-        $message = 'Redirected to original URL';
-        return new LinkDTORefund::fromRedirect($original_url, $message);
+    public function getLink($linkId)
+    {
+        return $this->linkRepository->getLinkById($linkId);
+    }
+
+    public function createLink($linkDTO)
+    {
+        $user_id = Auth::user() -> id;
+        $original_url = $linkDTO->getOriginalUrl();
+        $expired_at = $linkDTO->getExpiredAt() ?? $this->expiredAtDefault();
+
+        if (!empty($linkDTO->getCustomUrl())) {
+            if ($this->linkRepository->shortUrlInDB($linkDTO->getCustomUrl())) {
+                return abort(409, 'The link is already taken');
+            }
+            $short_url = $linkDTO->getCustomUrl();
+        } else {
+            $short_url = $this->generateUniqueShortUrl();
+        }
+
+        $link = $this->linkRepository->saveLink([
+            'original_url' => $original_url,
+            'short_url' => $short_url,
+            'user_id' => $user_id,
+            'expired_at' => $expired_at,
+        ]);
+
+        return $link;
+    }
+
+    public function handleRedirect($linkDTO)
+    {
+
+        $link = $this->linkRepository->findOriginalUrl($linkDTO->getShortUrl());
+        if (empty($link)) return abort(409, 'Link expired'); else return $link;
 
     }
 
