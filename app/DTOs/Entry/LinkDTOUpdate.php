@@ -2,24 +2,16 @@
 
 namespace App\DTOs\Entry;
 
-class LinkDTOUpdate
+readonly class LinkDTOUpdate
 {
-    private string $original_url;
-    private ?string $custom_url;
-    private ?string $expired_at;
-    private int $user_id;
 
     public function __construct(
-        int $user_id,
-        $original_url,
-        $custom_url,
-        $expired_at,
-    ) {
-        $this->original_url = $original_url;
-        $this->custom_url = $custom_url;
-        $this->expired_at = $expired_at;
-        $this->user_id = $user_id;
-    }
+        public int $user_id,
+        public string $original_url,
+        public string $custom_url,
+        public string $expired_at,
+    )
+    {}
 
     public function getOriginalUrl(): string
     {
