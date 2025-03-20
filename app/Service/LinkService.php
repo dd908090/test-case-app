@@ -2,6 +2,8 @@
 
 namespace App\Service;
 
+use App\Exceptions\LinkAlreadyTakenException;
+use App\Exceptions\LinkExpiredException;
 use App\Models\Link;
 use App\Repositories\LinkRepository;
 use Illuminate\Support\Facades\Auth;
@@ -19,46 +21,45 @@ class LinkService
 
     public function updateLink(Link $link, $linkDTO)
     {
-
         $link_data = $linkDTO->toArray();
+
         if (!empty($link_data["custom_url"])) {
             if ($this->linkRepository->shortUrlInDB($linkDTO->getCustomUrl())) {
-                return abort(409, 'The link is already taken');
+                throw new LinkAlreadyTakenException('The link is already taken');
             } else {
                 $link_data['short_url'] = $link_data['custom_url'];
             }
         }
 
-
-        $this->linkRepository->updateLink($link, $link_data);
+        $this->linkRepository->update($link, $link_data);
     }
 
-    public function getAllLinks()
+    public function getAllLinks(int $user_id)
     {
-        return $this->linkRepository->getAllLinksByUser(Auth::user()->id);
+        return $this->linkRepository->getAllByUser($user_id);
     }
 
     public function getLink($linkId)
     {
-        return $this->linkRepository->getLinkById($linkId);
+        return $this->linkRepository->getById($linkId);
     }
 
     public function createLink($linkDTO)
     {
-        $user_id = Auth::user() -> id;
+        $user_id = Auth::user()->id;
         $original_url = $linkDTO->getOriginalUrl();
         $expired_at = $linkDTO->getExpiredAt() ?? $this->expiredAtDefault();
 
         if (!empty($linkDTO->getCustomUrl())) {
             if ($this->linkRepository->shortUrlInDB($linkDTO->getCustomUrl())) {
-                return abort(409, 'The link is already taken');
+                throw new LinkAlreadyTakenException();
             }
             $short_url = $linkDTO->getCustomUrl();
         } else {
             $short_url = $this->generateUniqueShortUrl();
         }
 
-        $link = $this->linkRepository->saveLink([
+        $link = $this->linkRepository->save([
             'original_url' => $original_url,
             'short_url' => $short_url,
             'user_id' => $user_id,
@@ -70,10 +71,13 @@ class LinkService
 
     public function handleRedirect($linkDTO)
     {
-
         $link = $this->linkRepository->findOriginalUrl($linkDTO->getShortUrl());
-        if (empty($link)) return abort(409, 'Link expired'); else return $link;
 
+        if (empty($link)) {
+            throw new LinkExpiredException();
+        }
+
+        return $link;
     }
 
 

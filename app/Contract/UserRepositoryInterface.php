@@ -6,9 +6,9 @@ use app\Models\User;
 
 interface UserRepositoryInterface
 {
-    public function getAllUsers();
-    public function getUserById(User $User);
-    public function deleteUser(User $User);
-    public function createUser(array $attributes);
-    public function updateUser(User $User, array $attributes);
+    public function getAll();
+    public function getById(User $User);
+    public function delete(User $User);
+    public function create(array $attributes);
+    public function update(User $User, array $attributes);
 }

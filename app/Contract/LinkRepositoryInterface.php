@@ -6,9 +6,9 @@ use app\Models\Link;
 
 interface LinkRepositoryInterface
 {
-    public function getAllLinks();
-    public function getLinkById(Link $Link);
-    public function deleteLink(Link $Link);
-    public function saveLink(array $attributes);
-    public function updateLink(Link $Link, array $attributes);
+    public function getAll();
+    public function getById(Link $Link);
+    public function delete(Link $Link);
+    public function save(array $attributes);
+    public function update(Link $Link, array $attributes);
 }

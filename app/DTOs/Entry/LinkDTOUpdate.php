@@ -2,14 +2,12 @@
 
 namespace App\DTOs\Entry;
 
-use DateTime;
-
 class LinkDTOUpdate
 {
-    private $original_url;
-    private $custom_url;
-    private $expired_at;
-    private $user_id;
+    private string $original_url;
+    private ?string $custom_url;
+    private ?string $expired_at;
+    private int $user_id;
 
     public function __construct(
         int $user_id,

@@ -3,9 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\DTOs\Entry\LinkDTOHandleRedirect;
-use App\DTOs\Entry\LinkDTOShow;
 use App\DTOs\Entry\LinkDTOStore;
 use App\DTOs\Entry\LinkDTOUpdate;
+use App\Exceptions\LinkAlreadyTakenException;
+use App\Exceptions\LinkExpiredException;
 use App\Http\Requests\Link\Request;
 use App\Models\Link;
 use App\Service\LinkService;
@@ -23,22 +24,28 @@ class LinkController extends Controller
         $this->linkService = $linkService;
     }
 
-    public function index()
+    public function index(): Response
     {
-        $links = $this->linkService->getAllLinks();
+        $user_id = Auth::user()->id;
+
+        $links = $this->linkService->getAllLinks($user_id);
         return Inertia::render("Links/IndexPage", [
             'links' => $links
         ]);
     }
 
-    public function create()
+    public function create(): Response
     {
         return Inertia::render("Links/CreatePage");
     }
 
     public function store(Request $request)
     {
-        $data_validated = $request->validated();
+        $data_validated = $request->validate([
+            'original_url' => 'required|url',
+            'custom_url' => 'nullable|string|max:255',
+            'expired_at' => 'nullable|date',
+        ]);
 
         $linkDTO = new LinkDTOStore(
             Auth::user()->id,
@@ -47,11 +54,14 @@ class LinkController extends Controller
             $data_validated['expired_at'] ?? null
         );
 
-        $link = $this->linkService->createLink($linkDTO);
-
-        return to_route("links.index");
-
+        try {
+            $link = $this->linkService->createLink($linkDTO);
+            return to_route('links.index');
+        } catch (LinkAlreadyTakenException $e) {
+            abort(409, $e->getMessage());
+        }
     }
+
 
 
     public function show($linkId): Response
@@ -63,16 +73,20 @@ class LinkController extends Controller
         ]);
     }
 
-    public function edit(Link $link)
+    public function edit(Link $link): Response
     {
         return Inertia::render("Links/EditPage", [
             "link" => $link
         ]);
     }
 
-    public function update(Request $request, Link $link)
+    public function update(Request $request, Link $link): \Illuminate\Http\RedirectResponse
     {
-        $data_validated = $request->validated();
+        $data_validated = $request->validate([
+            'original_url' => 'required|url',
+            'custom_url' => 'nullable|string|max:255',
+            'expired_at' => 'nullable|date',
+        ]);
 
         $linkDTO = new LinkDTOUpdate(
             Auth::user()->id,
@@ -81,24 +95,27 @@ class LinkController extends Controller
             $data_validated['expired_at'] ?? null
         );
 
-        $this->linkService->updateLink($link, $linkDTO);
-
-        return to_route('links.show', ['link' => $link->id]);
+        try {
+            $this->linkService->updateLink($link, $linkDTO);
+            return to_route('links.show', ['link' => $link->id]);
+        } catch (LinkAlreadyTakenException $e) {
+            abort(409, $e->getMessage());
+        }
     }
 
-    public function destroy(Link $link)
+    public function destroy(Link $link): \Illuminate\Http\RedirectResponse
     {
         $link->delete();
         return Redirect::route("links.index");
     }
-
-
-    public function handleRedirect($short_url)
+    public function handleRedirect($shortUrl)
     {
-        $linkDTO = new LinkDTOHandleRedirect($short_url);
-
-        $link = $this->linkService->handleRedirect($linkDTO);
-        return redirect($link->original_url);
+        try {
+            $linkDTO = new LinkDTOHandleRedirect($shortUrl);
+            $link = $this->linkService->handleRedirect($linkDTO);
+            return redirect($link->original_url);
+        } catch (LinkExpiredException $e) {
+            abort(409, $e->getMessage());
+        }
     }
-
 }

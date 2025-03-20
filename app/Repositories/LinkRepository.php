@@ -12,33 +12,33 @@ class LinkRepository implements LinkRepositoryInterface
         return Link::where('expired_at', '<', $date)->get();
     }
 
-    public function getAllLinksByUser($user_id)
+    public function getAllByUser($user_id)
     {
         return Link::where('user_id', $user_id)->get();
     }
 
-    public function getAllLinks()
+    public function getAll()
     {
         return Link::all();
     }
 
-    public function getLinkById($linkId)
+    public function getById($linkId)
     {
         return Link::where('id', $linkId)->first();
     }
 
-    public function deleteLink(Link $link)
+    public function delete(Link $link)
     {
         $link->delete();
     }
 
-    public function saveLink(array $attributes)
+    public function save(array $attributes)
     {
 
         return Link::create($attributes);
     }
 
-    public function updateLink(Link $link, array $attributes)
+    public function update(Link $link, array $attributes)
     {
         return $link->update($attributes);
     }
